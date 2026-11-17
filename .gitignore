@@ -1,2 +1,6 @@
 # Build outputs
 build/
+logs/
+
+# clangd 缓存
+.cache/

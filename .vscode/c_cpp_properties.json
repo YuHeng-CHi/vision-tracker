@@ -2,7 +2,11 @@
   "configurations": [
     {
       "name": "WSL",
-      "includePath": ["${workspaceFolder}/include"],
+      "includePath": [
+        "${workspaceFolder}/include",
+        "${workspaceFolder}/test"
+      ],
+      "compileCommands": "${workspaceFolder}/build/compile_commands.json",
       "compilerPath": "/usr/bin/g++",
       "cStandard": "c17",
       "cppStandard": "c++17",
