@@ -23,29 +23,47 @@ else()
     set(PROJECT_WARNINGS -Wall -Wextra -Wpedantic)
 endif()
 
+# MinGW：静态链接运行库，生成可直接运行的 exe（不依赖 libstdc++-6.dll 等运行时）
+if(MINGW)
+    add_link_options(-static)
+endif()
+
 # ---------------------------------------------------------------------------
-# 目录约定（新增文件时按模块放进对应目录）
-#   include/datatype/        数据契约（只读）
-#   include/cli/             命令行输出
-#   include/targettracker/   跟踪核心：targetmanager / targetfactory / targetvalidator 等
-#   src/                     与 include/ 一一对应的实现
-#   test/testdatas/          测试帧数据（只读）
+# 目录约定（新增文件时按模块放进对应目录，src 与 include 一一对应）
+#   include/datatype/                      数据契约（只读）
+#   include/cli/                           命令行输出
+#   include/targettracker/targetmanager/   目标管理器
+#   include/targettracker/targetfactory/   工厂 / 校验器 / 结果统计
+#   include/targettracker/targetcheck/     目标实体（基类 + 普通/旋转装甲）
+#   include/targettracker/targetapi/       ITarget 抽象接口
+#   src/                                   与 include/ 一一对应的实现
+#   test/testdatas/                        测试帧数据（只读）
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
 # 核心库：与程序入口无关的业务代码
-# 新增 .cpp 后，记得把它加入下面的源文件列表
+# 新增 .cpp 时，把它按模块加入下面的源文件列表
 # ---------------------------------------------------------------------------
 add_library(vision_tracker_core STATIC
     # cli：命令行输出
     src/cli/ConsoleOutput.cpp
 
-    # targettracker：目标跟踪核心
+    # datatype：数据契约（预留实现文件，如流输出运算符）
+    src/datatype/data_types.cpp
+
+    # targettracker/targetmanager：目标管理器（单帧入口、分派、统计）
     src/targettracker/targetmanager/TargetManager.cpp
 
-    # TODO：实现新模块后在此追加，例如：
-    # src/targettracker/targetfactory/TargetFactory.cpp
-    # src/targettracker/targetvalidator/TargetValidator.cpp
+    # targettracker/targetcheck：目标实体
+    src/targettracker/targetcheck/TargetBase.cpp
+    src/targettracker/targetcheck/ArmorTarget.cpp
+    src/targettracker/targetcheck/SpinningTarget.cpp
+
+    # targettracker/targetfactory：帧校验 / 观测校验 / 工厂 / 结果统计
+    src/targettracker/targetfactory/TargetFactory.cpp
+    src/targettracker/targetfactory/FrameValidator.cpp
+    src/targettracker/targetfactory/ObservationValidator.cpp
+    src/targettracker/targetfactory/ResultBuilder.cpp
 )
 
 # include/ 是头文件根目录；PUBLIC 让链接本库的可执行程序也能找到头文件
