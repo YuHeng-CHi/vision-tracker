@@ -49,7 +49,7 @@ public:
                                              x_{obs.x},
                                              y_{obs.y},
                                              angle_{obs.angle},
-velocity_x_{0.0},
+                                             velocity_x_{0.0},
                                              velocity_y_{0.0},
                                              angular_velocity_{0.0},
                                              predicted_x_{obs.x},

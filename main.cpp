@@ -15,7 +15,6 @@ int main()
     for (const auto &frame : testFrames())
     {
         rm::Result result = target_manager.onFrame(frame);
-
         printResult(result); // 用于输出结果的函数
     }
     return 0;

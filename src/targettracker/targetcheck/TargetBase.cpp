@@ -11,10 +11,9 @@ bool TargetBase::isRestart(void) const
     return !this->has_observation_ || this->status_ == rm::TargetStatus::LOST;
 }
 
-// 计算两次观察的时间差（纳秒）
+// 计算两次观察的ns时间差
 std::int64_t TargetBase::observationDeltaNSecond(const std::int64_t &timespec_ns) const
 {
-    // 首次观测没有“上次观测时间”，返回 0（调用方随后走 isRestart 分支）
     if (!this->has_observation_)
     {
         return 0;
@@ -29,14 +28,12 @@ bool TargetBase::acceptLinearObservation(double obs_x, double obs_y, std::int64_
     const double obs_dt_seconds = static_cast<double>(obs_dt_ns) / 1e9;
     const double frame_delta_seconds = static_cast<double>(frame_delta_ns) / 1e9;
 
-    if (this->isRestart() || obs_dt_seconds <= 0.0)
-    {
+    if (this->isRestart() || obs_dt_seconds <= 0.0){
         // 首次观测 / LOST 后重新追踪：不使用很久以前的位置计算速度
         this->velocity_x_ = 0.0;
         this->velocity_y_ = 0.0;
     }
-    else
-    {
+    else{
         // 先用“上一次观测的位置”（当前 x_/y_）算速度，再覆盖
         this->velocity_x_ = (obs_x - this->x_) / obs_dt_seconds;
         this->velocity_y_ = (obs_y - this->y_) / obs_dt_seconds;
@@ -65,7 +62,7 @@ bool TargetBase::acceptAngularObservation(double obs_angle, std::int64_t obs_dt_
         this->angular_velocity_ = (obs_angle - this->angle_) / obs_dt_seconds;
     }
 
-    // 更新为本次观测角度，再预测下一帧角度
+    // 更新角度
     this->angle_ = obs_angle;
     this->predicted_angle_ = this->angle_ + this->angular_velocity_ * frame_delta_seconds;
     return true;
@@ -84,30 +81,67 @@ bool TargetBase::markObserved(std::int64_t timestamp_ns)
 // 状态转 LOST，位置/速度/预测/角度/角速度全部清零（对象保留）
 bool TargetBase::markLost()
 {
-    // TODO: status_ = LOST; 位置/速度/预测/角度/角速度清零
-    return false;
+    status_ = rm::TargetStatus::LOST;
+    x_ = 0.0;
+    y_ = 0.0;
+    angle_ = 0.0;
+    velocity_x_ = 0.0;
+    velocity_y_ = 0.0;
+    angular_velocity_ = 0.0;
+    predicted_x_ = 0.0;
+    predicted_y_ = 0.0;
+    predicted_angle_ = 0.0;
+    return true;
 }
 
 // missed_count +1；未达阈值推进预测；达阈值调用 markLost 并返回 false
 bool TargetBase::missStep(std::int64_t frame_delta_ns, size_t lost_threshold)
 {
-    (void)frame_delta_ns;
-    (void)lost_threshold;
-    // TODO: 丢失计数 +1；达阈值调用 markLost；否则推进预测值
-    return false;
+    // 已经 LOST：不再变化，让 missed_count 冻结在阈值处
+    if (status_ == rm::TargetStatus::LOST){
+        return false;
+    }
+
+    ++missed_count_;
+    
+    if (static_cast<size_t>(missed_count_) >= lost_threshold){
+        markLost();
+        return false;
+    }
+
+    const double frame_delta_seconds = static_cast<double>(frame_delta_ns) / 1e9;
+    predicted_x_ += velocity_x_ * frame_delta_seconds;
+    predicted_y_ += velocity_y_ * frame_delta_seconds;
+    return true;
 }
 
 // 未观测但 TRACK 时：predicted_angle += angular_velocity × (frame_delta_ns/1e9)
 bool TargetBase::advanceAngularPrediction(std::int64_t frame_delta_ns)
 {
-    (void)frame_delta_ns;
-    // TODO: 按纳秒间隔推进 predicted_angle_
-    return false;
+    if(status_ != rm::TargetStatus::TRACK)
+    {
+        return false;
+    }
+    predicted_angle_ += angular_velocity_ * (static_cast<double>(frame_delta_ns) / 1e9);
+    return true;
 }
 
 // 所有字段就绪后最后写；把公共状态导出给 ResultBuilder / 打印函数
 rm::TargetSnapshot TargetBase::snapshot() const
 {
-    // TODO: 从公共字段组装 rm::TargetSnapshot
-    return rm::TargetSnapshot{};
+    return rm::TargetSnapshot{
+        id_,
+        type_,
+        status_,
+        x_,
+        y_,
+        velocity_x_,
+        velocity_y_,
+        predicted_x_,
+        predicted_y_,
+        angle_,
+        angular_velocity_,
+        predicted_angle_,
+        missed_count_
+    };
 }
