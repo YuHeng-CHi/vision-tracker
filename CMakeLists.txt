@@ -28,22 +28,6 @@ if(MINGW)
     add_link_options(-static)
 endif()
 
-# ---------------------------------------------------------------------------
-# 目录约定（新增文件时按模块放进对应目录，src 与 include 一一对应）
-#   include/datatype/                      数据契约（只读）
-#   include/cli/                           命令行输出
-#   include/targettracker/targetmanager/   目标管理器
-#   include/targettracker/targetfactory/   工厂 / 校验器 / 结果统计
-#   include/targettracker/targetcheck/     目标实体（基类 + 普通/旋转装甲）
-#   include/targettracker/targetapi/       ITarget 抽象接口
-#   src/                                   与 include/ 一一对应的实现
-#   test/testdatas/                        测试帧数据（只读）
-# ---------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------
-# 核心库：与程序入口无关的业务代码
-# 新增 .cpp 时，把它按模块加入下面的源文件列表
-# ---------------------------------------------------------------------------
 add_library(vision_tracker_core STATIC
     # cli：命令行输出
     src/cli/ConsoleOutput.cpp
@@ -73,9 +57,6 @@ target_include_directories(vision_tracker_core
 
 target_compile_options(vision_tracker_core PRIVATE ${PROJECT_WARNINGS})
 
-# ---------------------------------------------------------------------------
-# 可执行程序
-# ---------------------------------------------------------------------------
 add_executable(tracker
     # 程序入口放在工程根目录
     main.cpp
