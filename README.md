@@ -9,7 +9,7 @@
 
 ## 1. 类设计&流程图
 ### 类设计图
-![类设计图](.\docs\imgs\classes.png "classes")
+![类设计图](./docs/imgs/classes.png "classes")
 
 ## 2. 一帧处理流程
 ### 1. Manage(负责**帧**级别) 
